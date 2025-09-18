@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi Futuristik</title>
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS untuk tampilan futuristik -->
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-light: #16213e;
+            --primary: #0f3460;
+            --secondary: #e94560;
+            --accent: #537895;
+            --glow: #00a8ff;
+            --text-light: #e0e0e0;
+            --text-dark: #1a1a2e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: linear-gradient(45deg, var(--bg-dark) 0%, var(--primary) 100%);
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- LOGIN VIEW --- */
+        #login-view {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            background: rgba(22, 33, 62, 0.6);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 168, 255, 0.2);
+            box-shadow: 0 0 25px rgba(0, 168, 255, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #login-view.loading {
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+
+        #login-view h2 {
+            margin-bottom: 20px;
+            color: var(--glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 300;
+            font-size: 0.9em;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--glow);
+            box-shadow: 0 0 10px var(--glow);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--secondary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-login:hover {
+            background: #ff6384;
+            box-shadow: 0 0 15px #ff6384;
+        }
+
+        /* --- MAIN APP VIEW --- */
+        #app-view {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            width: 80px;
+            background-color: var(--primary);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: width 0.3s ease;
+            z-index: 10;
+        }
+        
+        #sidebar:hover {
+            width: 250px;
+        }
+
+        #sidebar .logo {
+            color: var(--glow);
+            font-size: 2em;
+            margin-bottom: 40px;
+        }
+        
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .nav-link i {
+            font-size: 1.5em;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .nav-link .link-text {
+            opacity: 0;
+            margin-left: 20px;
+            transition: opacity 0.2s ease;
+        }
+
+        #sidebar:hover .link-text {
+            opacity: 1;
+        }
+
+        .nav-link.active, .nav-link:hover {
+            background-color: var(--bg-light);
+            color: var(--glow);
+            border-right: 3px solid var(--glow);
+        }
+        
+        #logout-btn {
+            margin-top: auto;
+        }
+
+
+        /* --- Main Content --- */
+        #main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: var(--bg-light);
+        }
+
+        .content-section {
+            padding: 20px;
+            background: var(--primary);
+            border-radius: 15px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .content-section h2 {
+            border-bottom: 2px solid var(--glow);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: var(--text-light);
+        }
+        
+        #info-sesi, #info-sesi-absensi {
+          margin-bottom: 20px;
+          background-color: var(--bg-dark);
+          padding: 10px;
+          border-radius: 5px;
+          border-left: 3px solid var(--glow);
+        }
+        
+        .submenu {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .submenu-btn {
+            padding: 10px 15px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submenu-btn:hover {
+            background-color: var(--primary);
+            border-color: var(--glow);
+        }
+        
+        .submenu-btn.active {
+            background-color: var(--glow);
+            color: var(--bg-dark);
+            border-color: var(--glow);
+            font-weight: bold;
+        }
+
+        /* --- Tables --- */
+        .futuristic-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .futuristic-table th, .futuristic-table td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        .futuristic-table thead {
+            background-color: rgba(0, 168, 255, 0.2);
+            color: var(--glow);
+            font-weight: 600;
+        }
+        
+        .futuristic-table tbody tr {
+            border-bottom: 1px solid var(--accent);
+            transition: background-color 0.2s ease;
+        }
+
+        .futuristic-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .futuristic-table tbody tr:hover {
+            background-color: var(--bg-dark);
+        }
+        
+        .status-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .status-btn {
+            padding: 5px 10px;
+            border: 1px solid var(--accent);
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: transparent;
+            color: var(--text-light);
+            transition: all 0.2s ease;
+        }
+
+        .status-btn.selected {
+            background-color: var(--glow);
+            color: var(--bg-dark);
+            border-color: var(--glow);
+            font-weight: bold;
+            transform: scale(1.1);
+        }
+        
+        .btn-action {
+            padding: 10px 20px;
+            background-color: var(--secondary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            float: right;
+        }
+        .btn-action:hover {
+            background: #ff6384;
+            box-shadow: 0 0 10px #ff6384;
+        }
+
+        /* Loader */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--glow);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Message Box */
+        #message-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(22, 33, 62, 0.8);
+            color: var(--text-light);
+            padding: 15px 25px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .message-icon {
+            font-size: 1.5em;
+        }
+        .message-icon.error { color: var(--secondary); }
+        .message-icon.success { color: #28a745; }
+        .message-icon.info { color: var(--glow); }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOADER -->
+    <div id="loader" class="loader-container hidden">
+      <div class="loader"></div>
+    </div>
+
+    <!-- MESSAGE BOX -->
+    <div id="message-box" class="hidden">
+      <i id="message-icon" class="message-icon"></i>
+      <span id="message-text"></span>
+    </div>
+
+    <!-- TAMPILAN LOGIN -->
+    <div id="login-view">
+        <h2><i class="fas fa-user-shield"></i> Login Guru</h2>
+        <div class="input-group">
+            <label for="nama-guru">Nama Guru</label>
+            <select id="nama-guru" required>
+                <option value="">Pilih Nama Anda...</option>
+            </select>
+        </div>
+        <div class="input-group hidden" id="id-group">
+            <label for="id-user">ID User</label>
+            <input type="text" id="id-user" readonly>
+        </div>
+        <button class="btn-login hidden" id="btn-login-submit">Login</button>
+    </div>
+
+    <!-- TAMPILAN APLIKASI UTAMA -->
+    <div id="app-view" class="hidden">
+        <nav id="sidebar">
+            <div class="logo"><i class="fas fa-atom"></i></div>
+            <a href="#" class="nav-link active" data-target="beranda"><i class="fas fa-home"></i><span class="link-text">Beranda</span></a>
+            <a href="#" class="nav-link" data-target="absensi"><i class="fas fa-user-check"></i><span class="link-text">Absensi</span></a>
+            <a href="#" class="nav-link" data-target="data"><i class="fas fa-database"></i><span class="link-text">Data</span></a>
+            <a href="#" class="nav-link" data-target="laporan"><i class="fas fa-file-pdf"></i><span class="link-text">Laporan</span></a>
+            <a href="#" id="logout-btn" class="nav-link"><i class="fas fa-sign-out-alt"></i><span class="link-text">Logout</span></a>
+        </nav>
+
+        <main id="main-content">
+            <!-- BERANDA -->
+            <div id="beranda-content" class="content-section">
+                <h2>Rekapitulasi Absensi Hari Ini</h2>
+                <p id="info-sesi"></p>
+                <table class="futuristic-table" id="rekap-harian-table">
+                    <thead>
+                        <tr>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th>Jam Ke-</th>
+                            <th>Hadir</th>
+                            <th>Ijin</th>
+                            <th>Sakit</th>
+                            <th>Alpha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data diisi oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ABSENSI -->
+            <div id="absensi-content" class="content-section hidden">
+                <h2>Form Absensi Kelas</h2>
+                 <p id="info-sesi-absensi"></p>
+                <table class="futuristic-table" id="absensi-table">
+                    <thead>
+                        <tr>
+                            <th>NIS</th>
+                            <th>Nama Siswa</th>
+                            <th>Status Kehadiran</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data diisi oleh JavaScript -->
+                    </tbody>
+                </table>
+                <button id="btn-submit-absensi" class="btn-action">Simpan Absensi</button>
+            </div>
+            
+            <!-- DATA -->
+             <div id="data-content" class="content-section hidden">
+                <h2>Master Data</h2>
+                 <div class="submenu">
+                    <button class="submenu-btn active" data-submenu="data-guru">Data Guru</button>
+                    <button class="submenu-btn" data-submenu="data-siswa">Data Siswa</button>
+                    <button class="submenu-btn" data-submenu="jadwal">Jadwal</button>
+                </div>
+                 <div id="data-guru-container" class="submenu-content"></div>
+                 <div id="data-siswa-container" class="submenu-content hidden"></div>
+                 <div id="jadwal-container" class="submenu-content hidden"></div>
+            </div>
+
+            <!-- LAPORAN -->
+            <div id="laporan-content" class="content-section hidden">
+                <h2>Laporan Absensi</h2>
+                <p>Fitur ini memerlukan koneksi backend untuk menghasilkan laporan.</p>
+                <button class="btn-action">Download Laporan (Contoh)</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // URL untuk Google Apps Script Web App
+        // PENTING: Ganti dengan URL Web App Anda yang sudah di-deploy.
+        // Pastikan saat deploy memilih "Execute as: Me" dan "Who has access: Anyone".
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwye17vBTiWQElU1UwaybJLazimENSlDq1xaBIS4Bzaz3eCd_kTJ8BI11Z0jecaUUsRYw/exec";
+        
+        // Log URL untuk debugging
+        console.log("Mencoba mengambil data dari URL:", GAS_URL);
+
+        // Elemen-elemen UI
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app-view');
+        const loader = document.getElementById('loader');
+        const selectGuru = document.getElementById('nama-guru');
+        const inputId = document.getElementById('id-user');
+        const idGroup = document.getElementById('id-group');
+        const btnLogin = document.getElementById('btn-login-submit');
+        const messageBox = document.getElementById('message-box');
+        const messageIcon = document.getElementById('message-icon');
+        const messageText = document.getElementById('message-text');
+
+        let initialData = {}; // Menyimpan data master
+        let sessionInfo = {}; // Menyimpan info sesi login
+
+        // Fungsi utilitas
+        const showLoader = (show) => loader.classList.toggle('hidden', !show);
+        const populateDropdown = (selectEl, options, defaultText) => {
+            selectEl.innerHTML = `<option value="">${defaultText}</option>`;
+            options.forEach(item => {
+                const value = typeof item === 'object' ? item.value : item;
+                const text = typeof item === 'object' ? item.text : item;
+                selectEl.innerHTML += `<option value="${value}">${text}</option>`;
+            });
+        };
+
+        const showMessage = (message, type = 'info') => {
+            messageBox.classList.remove('show', 'hidden');
+            messageIcon.className = 'message-icon';
+            messageText.textContent = message;
+
+            if (type === 'error') {
+                messageIcon.classList.add('fas', 'fa-times-circle', 'error');
+            } else if (type === 'success') {
+                messageIcon.classList.add('fas', 'fa-check-circle', 'success');
+            } else {
+                messageIcon.classList.add('fas', 'fa-info-circle', 'info');
+            }
+            
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 5000);
+        };
+
+        // 1. Memuat data awal untuk form login dari Google Apps Script
+        async function loadInitialData() {
+            // Pengecekan URL
+            if (GAS_URL === "GANTI_DENGAN_URL_WEB_APP_ANDA") {
+                showMessage('KESALAHAN: URL Web App belum diatur. Harap edit file HTML dan ganti placeholder "GANTI_DENGAN_URL_WEB_APP_ANDA" dengan URL Google Apps Script Anda yang valid.', 'error');
+                return; // Menghentikan eksekusi lebih lanjut
+            }
+
+            showLoader(true);
+            try {
+                const response = await fetch(`${GAS_URL}?action=getTeachersAndMasterData`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.success) {
+                    initialData = result.data;
+                    populateDropdown(selectGuru, initialData.teachers, 'Pilih Nama Anda...');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                showMessage(`Gagal memuat data awal: ${error.message}`, 'error');
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        // Logika untuk menampilkan ID Guru saat nama dipilih
+        selectGuru.addEventListener('change', () => {
+            const selectedGuru = selectGuru.value;
+            if (selectedGuru && initialData.master && initialData.master[selectedGuru]) {
+                inputId.value = initialData.master[selectedGuru].id;
+                idGroup.classList.remove('hidden');
+                btnLogin.classList.remove('hidden');
+            } else {
+                idGroup.classList.add('hidden');
+                btnLogin.classList.add('hidden');
+            }
+        });
+
+        // Logika Login
+        btnLogin.addEventListener('click', () => {
+            const namaGuru = selectGuru.value;
+            const idGuru = inputId.value;
+            
+            if (!namaGuru) {
+                showMessage('Silakan pilih nama Anda.', 'error');
+                return;
+            }
+            
+            sessionInfo = { namaGuru, idGuru };
+            
+            // Simpan sesi ke localStorage
+            localStorage.setItem('absensiSession', JSON.stringify(sessionInfo));
+            
+            loginView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            
+            // Tampilkan info sesi
+            document.getElementById('info-sesi').textContent = `Selamat datang, ${namaGuru}!`;
+            document.getElementById('info-sesi-absensi').textContent = `Guru: ${namaGuru}`;
+            
+            showMessage(`Login berhasil sebagai ${namaGuru}`, 'success');
+        });
+
+        // Logika Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            // Hapus sesi dari localStorage
+            localStorage.removeItem('absensiSession');
+            
+            // Reset state
+            sessionInfo = {};
+            initialData = {};
+            
+            appView.classList.add('hidden');
+            loginView.classList.remove('hidden');
+            
+            // Reset form login
+            selectGuru.innerHTML = '<option value="">Pilih Nama Anda...</option>';
+            idGroup.classList.add('hidden');
+            btnLogin.classList.add('hidden');
+            
+            showMessage('Anda berhasil logout.', 'info');
+            
+            // Muat ulang data awal
+            loadInitialData();
+        });
+
+        // Navigasi
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if(link.id === 'logout-btn') return; // Logout ditangani terpisah
+
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                const target = link.dataset.target;
+                contentSections.forEach(section => {
+                    section.classList.toggle('hidden', section.id !== `${target}-content`);
+                });
+            });
+        });
+        
+        // Inisialisasi Aplikasi
+        // Cek jika ada sesi yang tersimpan
+        const savedSession = localStorage.getItem('absensiSession');
+        if (savedSession) {
+            sessionInfo = JSON.parse(savedSession);
+            loginView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            document.getElementById('info-sesi').textContent = `Selamat datang, ${sessionInfo.namaGuru}!`;
+            document.getElementById('info-sesi-absensi').textContent = `Guru: ${sessionInfo.namaGuru}`;
+
+        } else {
+            loadInitialData();
+        }
+
+    });
+    </script>
+</body>
+</html>
+

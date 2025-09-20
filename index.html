@@ -232,6 +232,13 @@
           border-left: 3px solid var(--glow);
         }
         
+        .submenu {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
         .data-header {
             display: flex;
             justify-content: space-between;
@@ -239,18 +246,31 @@
             margin-bottom: 20px;
         }
 
-        .btn-add {
+        .submenu-btn {
             padding: 10px 15px;
-            background-color: var(--glow);
-            color: var(--bg-dark);
-            border: 1px solid var(--glow);
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--accent);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .btn-add:hover {
-            background-color: var(--bg-dark);
-            color: var(--glow);
+
+        .submenu-btn:hover {
+            background-color: var(--primary);
+            border-color: var(--glow);
+        }
+        
+        .submenu-btn.active {
+            background-color: var(--glow);
+            color: var(--bg-dark);
+            border-color: var(--glow);
+            font-weight: bold;
+        }
+        
+        .btn-add {
+            background-color: var(--glow);
+            color: var(--bg-dark);
         }
 
         /* --- Tables --- */
@@ -552,8 +572,8 @@
             </select>
         </div>
         <div class="input-group hidden" id="id-group">
-            <label for="id-user">ID Guru</label>
-            <input type="text" id="id-user" placeholder="Masukkan ID Anda" required>
+            <label for="id-user">ID User</label>
+            <input type="text" id="id-user" readonly>
         </div>
         <button class="btn-login hidden" id="btn-login-submit">Login</button>
         <p style="margin-top: 20px;">
@@ -572,7 +592,7 @@
                 <a href="#" class="nav-link active" data-target="beranda"><i class="fas fa-home"></i><span class="link-text">Beranda</span></a>
                 <a href="#" class="nav-link" data-target="absensi"><i class="fas fa-user-check"></i><span class="link-text">Absensi</span></a>
                 <a href="#" class="nav-link" data-target="data"><i class="fas fa-database"></i><span class="link-text">Data</span></a>
-                <a href="#" class="nav-link" data-target="laporan"><i class="fas fa-chart-line"></i><span class="link-text">Laporan</span></a>
+                <a href="#" class="nav-link" data-target="laporan"><i class="fas fa-chart-line"></i><span class="link-text">Laporan Grafik</span></a>
             </div>
             <a href="#" id="logout-btn" class="nav-link"><i class="fas fa-sign-out-alt"></i><span class="link-text">Logout</span></a>
         </nav>
@@ -639,10 +659,18 @@
             
             <!-- DATA -->
              <div id="data-content" class="content-section hidden">
-                 <div id="jadwal-container">
+                <h2>Master Data</h2>
+                 <div class="submenu">
+                    <button class="submenu-btn active" data-submenu="data-guru">Data Guru</button>
+                    <button class="submenu-btn" data-submenu="data-siswa">Data Siswa</button>
+                    <button class="submenu-btn" data-submenu="jadwal">Jadwal</button>
+                </div>
+                 <div id="data-guru-container" class="submenu-content"></div>
+                 <div id="data-siswa-container" class="submenu-content hidden"></div>
+                 <div id="jadwal-container" class="submenu-content hidden">
                     <div class="data-header">
-                        <h2>Jadwal Mengajar Anda</h2>
-                        <button id="btn-add-jadwal" class="btn-add"><i class="fas fa-plus"></i> Tambah Jadwal</button>
+                        <h3>Data Jadwal Mengajar</h3>
+                        <button id="btn-add-jadwal" class="submenu-btn btn-add"><i class="fas fa-plus"></i> Tambah Jadwal</button>
                     </div>
                     <div id="jadwal-table-container"></div>
                  </div>
@@ -650,7 +678,7 @@
 
             <!-- LAPORAN -->
             <div id="laporan-content" class="content-section hidden">
-                <h2>Laporan Absensi</h2>
+                <h2>Grafik Absensi Bulanan</h2>
                 <div class="input-group">
                     <label for="select-kelas-laporan">Pilih Kelas untuk Laporan</label>
                     <select id="select-kelas-laporan">
@@ -694,40 +722,11 @@
                 </div>
                 <div class="input-group">
                     <label for="jadwal-mapel">Mata Pelajaran</label>
-                    <select id="jadwal-mapel" required>
-                        <option value="">Pilih Mata Pelajaran...</option>
-                        <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                        <option value="Bahasa Inggris">Bahasa Inggris</option>
-                        <option value="Bahasa Jawa">Bahasa Jawa</option>
-                        <option value="Bimbingan Konseling">Bimbingan Konseling</option>
-                        <option value="Baca Tulis Al Qur'an">Baca Tulis Al Qur'an</option>
-                        <option value="Informatika">Informatika</option>
-                        <option value="IPA">IPA</option>
-                        <option value="IPS">IPS</option>
-                        <option value="Ke-NU-an">Ke-NU-an</option>
-                        <option value="Matematika">Matematika</option>
-                        <option value="Pendidikan Agama Islam dan Budi Pekerti">Pendidikan Agama Islam dan Budi Pekerti</option>
-                        <option value="Pendidikan Jasmani Olahraga Kesehatan">Pendidikan Jasmani Olahraga Kesehatan</option>
-                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                        <option value="Seni Budaya dan Prakarya">Seni Budaya dan Prakarya</option>
-                    </select>
+                    <input type="text" id="jadwal-mapel" required>
                 </div>
                 <div class="input-group">
                     <label for="jadwal-kelas">Kelas</label>
-                    <select id="jadwal-kelas" required>
-                        <option value="">Pilih Kelas...</option>
-                        <option value="7A">7A</option>
-                        <option value="7B">7B</option>
-                        <option value="7C">7C</option>
-                        <option value="7D">7D</option>
-                        <option value="8A">8A</option>
-                        <option value="8B">8B</option>
-                        <option value="8D">8D</option>
-                        <option value="9A">9A</option>
-                        <option value="9B">9B</option>
-                        <option value="9C">9C</option>
-                        <option value="9D">9D</option>
-                    </select>
+                    <input type="text" id="jadwal-kelas" required>
                 </div>
                 <div class="input-group">
                     <label for="jadwal-id-guru">ID Guru</label>
@@ -910,8 +909,8 @@
         
         selectGuru.addEventListener('change', () => {
             const selectedGuru = selectGuru.value;
-            if (selectedGuru) {
-                inputId.value = ''; 
+            if (selectedGuru && initialData.master && initialData.master[selectedGuru]) {
+                inputId.value = initialData.master[selectedGuru].id;
                 idGroup.classList.remove('hidden');
                 btnLogin.classList.remove('hidden');
             } else {
@@ -921,23 +920,9 @@
         });
 
         btnLogin.addEventListener('click', () => {
-            const selectedNamaGuru = selectGuru.value;
-            const enteredIdGuru = inputId.value.trim();
-
-            if (!selectedNamaGuru || !enteredIdGuru) {
-                showMessage('Nama dan ID Guru harus diisi.', 'error');
-                return;
-            }
-            
-            const correctIdGuru = initialData.master[selectedNamaGuru]?.id;
-
-            if (correctIdGuru && String(correctIdGuru).trim() === enteredIdGuru) {
-                sessionInfo = { namaGuru: selectedNamaGuru, idGuru: enteredIdGuru };
-                localStorage.setItem('absensiSession', JSON.stringify(sessionInfo));
-                startApp();
-            } else {
-                showMessage('Nama dan ID Guru tidak cocok. Silakan periksa kembali.', 'error');
-            }
+            sessionInfo = { namaGuru: selectGuru.value, idGuru: inputId.value };
+            localStorage.setItem('absensiSession', JSON.stringify(sessionInfo));
+            startApp();
         });
 
         async function startApp() {
@@ -1094,6 +1079,8 @@
             const result = await apiCall('getAllData', {}, 'GET');
             if (result && result.data) {
                 masterDataCache = result.data;
+                document.getElementById('data-guru-container').innerHTML = createTable(['ID Guru', 'Nama Guru'], masterDataCache.teachers);
+                document.getElementById('data-siswa-container').innerHTML = createTable(['NIS', 'Nama Siswa', 'Kelas'], masterDataCache.students);
                 renderJadwalTable(masterDataCache.schedules, sessionInfo.idGuru);
             }
         }
@@ -1129,6 +1116,18 @@
                     if (!masterDataCache) await loadMasterData();
                     populateLaporanKelasDropdown();
                 }
+            });
+        });
+        
+        const submenuBtns = document.querySelectorAll('.submenu-btn');
+        const submenuContents = document.querySelectorAll('.submenu-content');
+        submenuBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                submenuBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                submenuContents.forEach(content => {
+                    content.classList.toggle('hidden', content.id !== `${btn.dataset.submenu}-container`);
+                });
             });
         });
         
@@ -1222,15 +1221,8 @@
         
         // --- LOGIKA GRAFIK LAPORAN ---
         function populateLaporanKelasDropdown() {
-             if (masterDataCache && masterDataCache.schedules) {
-                // Filter jadwal hanya untuk guru yang login
-                const teacherSchedules = masterDataCache.schedules.filter(schedule => {
-                    const scheduleTeacherId = String(schedule.data[5]);
-                    return scheduleTeacherId === String(sessionInfo.idGuru);
-                });
-
-                // Ambil semua kelas unik dari jadwal guru tersebut, tanpa filter hari
-                const uniqueClasses = [...new Set(teacherSchedules.map(s => s.data[4]))].sort();
+            if (masterDataCache && masterDataCache.students) {
+                const uniqueClasses = [...new Set(masterDataCache.students.map(s => s[2]))].sort();
                 populateDropdown(selectKelasLaporan, uniqueClasses, 'Pilih Kelas...');
             }
         }
@@ -1239,11 +1231,10 @@
             const kelas = e.target.value;
             if (attendanceChartInstance) {
                 attendanceChartInstance.destroy();
-                attendanceChartInstance = null;
             }
             if (!kelas) return;
             
-            const result = await apiCall('getMonthlyChartData', { kelas, idGuru: sessionInfo.idGuru }, 'GET');
+            const result = await apiCall('getMonthlyChartData', { kelas }, 'GET');
             if (result && result.data) {
                 renderAttendanceChart(result.data);
             }
@@ -1272,12 +1263,7 @@
                         y: {
                             beginAtZero: true,
                             title: { display: true, text: 'Jumlah Siswa', font: { size: 14 } },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: {
-                                stepSize: 2,
-                                precision: 0 
-                            },
-                            max: 34
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         x: {
                             title: { display: true, text: 'Tanggal di Bulan Ini', font: { size: 14 } },

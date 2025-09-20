@@ -1239,6 +1239,7 @@
             const kelas = e.target.value;
             if (attendanceChartInstance) {
                 attendanceChartInstance.destroy();
+                attendanceChartInstance = null;
             }
             if (!kelas) return;
             

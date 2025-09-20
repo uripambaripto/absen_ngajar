@@ -572,7 +572,7 @@
                 <a href="#" class="nav-link active" data-target="beranda"><i class="fas fa-home"></i><span class="link-text">Beranda</span></a>
                 <a href="#" class="nav-link" data-target="absensi"><i class="fas fa-user-check"></i><span class="link-text">Absensi</span></a>
                 <a href="#" class="nav-link" data-target="data"><i class="fas fa-database"></i><span class="link-text">Data</span></a>
-                <a href="#" class="nav-link" data-target="laporan"><i class="fas fa-chart-line"></i><span class="link-text">Laporan Grafik</span></a>
+                <a href="#" class="nav-link" data-target="laporan"><i class="fas fa-chart-line"></i><span class="link-text">Laporan</span></a>
             </div>
             <a href="#" id="logout-btn" class="nav-link"><i class="fas fa-sign-out-alt"></i><span class="link-text">Logout</span></a>
         </nav>
@@ -650,7 +650,7 @@
 
             <!-- LAPORAN -->
             <div id="laporan-content" class="content-section hidden">
-                <h2>Grafik Absensi Bulanan</h2>
+                <h2>Laporan Absensi</h2>
                 <div class="input-group">
                     <label for="select-kelas-laporan">Pilih Kelas untuk Laporan</label>
                     <select id="select-kelas-laporan">
@@ -1273,9 +1273,10 @@
                             title: { display: true, text: 'Jumlah Siswa', font: { size: 14 } },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
                             ticks: {
-                                stepSize: 1,
+                                stepSize: 2,
                                 precision: 0 
-                            }
+                            },
+                            max: 34
                         },
                         x: {
                             title: { display: true, text: 'Tanggal di Bulan Ini', font: { size: 14 } },

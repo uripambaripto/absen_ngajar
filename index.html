@@ -353,6 +353,28 @@
             color: var(--text-light) !important;
         }
 
+        /* --- Notifikasi --- */
+        .notification-box {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: fadeIn 0.5s;
+        }
+
+        .notification-box.info {
+            background-color: var(--primary);
+            border: 1px solid var(--glow);
+            color: var(--text-light);
+        }
+        
+        .notification-box i {
+            font-size: 1.5em;
+            color: var(--glow);
+        }
+
         /* Loader */
         .loader-container {
             position: fixed;
@@ -582,6 +604,7 @@
             <div id="beranda-content" class="content-section">
                 <h2>Rekapitulasi Absensi Hari Ini</h2>
                 <p id="info-sesi"></p>
+                <div id="homepage-notification" class="hidden"></div>
                 <table class="futuristic-table" id="rekap-harian-table">
                     <thead>
                         <tr>
@@ -604,6 +627,7 @@
             <div id="absensi-content" class="content-section hidden">
                 <h2>Form Absensi Kelas</h2>
                 <p id="info-sesi-absensi"></p>
+                <div id="absensi-notification" class="hidden"></div>
                 <div id="session-selection" class="input-group">
                     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 200px;">
@@ -639,7 +663,8 @@
             
             <!-- DATA -->
              <div id="data-content" class="content-section hidden">
-                 <div id="jadwal-container">
+                <div id="data-notification" class="hidden"></div>
+                <div id="jadwal-container">
                     <div class="data-header">
                         <h2>Jadwal Mengajar Anda</h2>
                         <button id="btn-add-jadwal" class="btn-add"><i class="fas fa-plus"></i> Tambah Jadwal</button>
@@ -651,14 +676,17 @@
             <!-- LAPORAN -->
             <div id="laporan-content" class="content-section hidden">
                 <h2>Grafik Absensi Bulanan</h2>
-                <div class="input-group">
-                    <label for="select-kelas-laporan">Pilih Kelas untuk Laporan</label>
-                    <select id="select-kelas-laporan">
-                        <option value="">Pilih Kelas...</option>
-                    </select>
-                </div>
-                <div style="padding: 10px; background: var(--bg-dark); border-radius: 10px;">
-                    <canvas id="attendanceChart"></canvas>
+                <div id="laporan-notification" class="hidden"></div>
+                <div id="laporan-main-content">
+                    <div class="input-group">
+                        <label for="select-kelas-laporan">Pilih Kelas untuk Laporan</label>
+                        <select id="select-kelas-laporan">
+                            <option value="">Pilih Kelas...</option>
+                        </select>
+                    </div>
+                    <div style="padding: 10px; background: var(--bg-dark); border-radius: 10px;">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
                 </div>
             </div>
         </main>
@@ -679,28 +707,27 @@
                         <option value="Rabu">Rabu</option>
                         <option value="Kamis">Kamis</option>
                         <option value="Jumat">Jumat</option>
-                        <option value="Sabtu">Sabtu</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <div class="input-group" style="flex: 1;">
                         <label for="jadwal-jam-mulai">Jam Mulai</label>
-                        <input type="text" id="jadwal-jam-mulai" placeholder="HH:MM" required>
+                        <input type="text" id="jadwal-jam-mulai" placeholder="HH.MM" required>
                     </div>
                     <div class="input-group" style="flex: 1;">
                         <label for="jadwal-jam-selesai">Jam Selesai</label>
-                        <input type="text" id="jadwal-jam-selesai" placeholder="HH:MM" required>
+                        <input type="text" id="jadwal-jam-selesai" placeholder="HH.MM" required>
                     </div>
                 </div>
                 <div class="input-group">
                     <label for="jadwal-mapel">Mata Pelajaran</label>
                     <select id="jadwal-mapel" required>
                         <option value="">Pilih Mata Pelajaran...</option>
+                        <option value="Baca Tulis Al Qur'an">Baca Tulis Al Qur'an</option>
                         <option value="Bahasa Indonesia">Bahasa Indonesia</option>
                         <option value="Bahasa Inggris">Bahasa Inggris</option>
                         <option value="Bahasa Jawa">Bahasa Jawa</option>
                         <option value="Bimbingan Konseling">Bimbingan Konseling</option>
-                        <option value="Baca Tulis Al Qur'an">Baca Tulis Al Qur'an</option>
                         <option value="Informatika">Informatika</option>
                         <option value="IPA">IPA</option>
                         <option value="IPS">IPS</option>
@@ -722,6 +749,7 @@
                         <option value="7D">7D</option>
                         <option value="8A">8A</option>
                         <option value="8B">8B</option>
+                        <option value="8C">8C</option>
                         <option value="8D">8D</option>
                         <option value="9A">9A</option>
                         <option value="9B">9B</option>
@@ -826,6 +854,12 @@
         // --- FUNGSI UTILITAS ---
         const showLoader = (show) => loader.classList.toggle('hidden', !show);
 
+        // Fungsi baru untuk mengecek weekend
+        function isWeekend() {
+            const today = new Date().getDay(); // 0 = Minggu, 6 = Sabtu
+            return today === 0 || today === 6;
+        }
+
         const populateDropdown = (selectEl, options, defaultText) => {
             selectEl.innerHTML = `<option value="">${defaultText}</option>`;
             if(Array.isArray(options)) {
@@ -837,22 +871,18 @@
             }
         };
         
-        const createTable = (headers, dataRows) => {
-            let tableHTML = '<table class="futuristic-table"><thead><tr>';
-            headers.forEach(h => tableHTML += `<th>${h}</th>`);
-            tableHTML += '</tr></thead><tbody>';
-            if(dataRows.length === 0){
-                tableHTML += `<tr><td colspan="${headers.length}" style="text-align:center;">Data tidak ditemukan.</td></tr>`;
-            } else {
-                dataRows.forEach(row => {
-                    tableHTML += '<tr>';
-                    (Array.isArray(row) ? row : row.data).forEach(cell => tableHTML += `<td>${cell}</td>`);
-                    tableHTML += '</tr>';
-                });
+        // Fungsi untuk mengurutkan nama kelas (e.g., "7A", "8B", "9A")
+        function sortKelas(a, b) {
+            const numA = parseInt(a) || 0;
+            const charA = a.replace(String(numA), '');
+            const numB = parseInt(b) || 0;
+            const charB = b.replace(String(numB), '');
+
+            if (numA !== numB) {
+                return numA - numB;
             }
-            tableHTML += '</tbody></table>';
-            return tableHTML;
-        };
+            return charA.localeCompare(charB);
+        }
 
         const showMessage = (message, type = 'info') => {
             messageText.textContent = message;
@@ -866,8 +896,8 @@
         };
         
         // --- FUNGSI API CALL ---
-        async function apiCall(action, data, method = 'POST') {
-            showLoader(true);
+        async function apiCall(action, data, method = 'POST', showLoaderFlag = true) {
+            if (showLoaderFlag) showLoader(true);
             try {
                 let response;
                 if (method === 'GET') {
@@ -888,7 +918,7 @@
                 showMessage(error.message, 'error');
                 return null;
             } finally {
-                showLoader(false);
+                if (showLoaderFlag) showLoader(false);
             }
         }
 
@@ -946,43 +976,130 @@
             document.getElementById('info-sesi').textContent = `Selamat datang, ${sessionInfo.namaGuru}!`;
             document.getElementById('info-sesi-absensi').textContent = `Guru: ${sessionInfo.namaGuru}`;
             showMessage(`Login berhasil sebagai ${sessionInfo.namaGuru}`, 'success');
+            
+            // Muat data master jika belum ada, diperlukan untuk rekap beranda
+            if (!masterDataCache) {
+                const allDataResult = await apiCall('getAllData', {}, 'GET', false);
+                if (allDataResult && allDataResult.data) {
+                    masterDataCache = allDataResult.data;
+                }
+            }
+            updateNavLinksVisibility(); // Periksa visibilitas menu saat aplikasi dimulai
             await loadHomepageRecap();
         }
         
         async function loadHomepageRecap() {
-            const tableBody = document.querySelector('#rekap-harian-table tbody');
-            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>`;
-            const result = await apiCall('getTodaysRecap', { idGuru: sessionInfo.idGuru }, 'GET');
-            if (result && result.data) {
-                if(result.data.length === 0) {
-                     tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data absensi untuk Anda hari ini.</td></tr>`;
-                     return;
-                }
-                tableBody.innerHTML = '';
-                result.data.forEach(item => {
-                    const row = `
-                        <tr>
-                            <td>${item.mapel}</td>
-                            <td>${item.kelas}</td>
-                            <td>${item.jam}</td>
-                            <td>${item.hadir}</td>
-                            <td>${item.ijin}</td>
-                            <td>${item.sakit}</td>
-                            <td>${item.alpha}</td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            } else {
-                 tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Gagal memuat data rekap.</td></tr>`;
+            const table = document.getElementById('rekap-harian-table');
+            const tableBody = table.querySelector('tbody');
+            const notificationBox = document.getElementById('homepage-notification');
+
+            // Cek jika hari ini weekend
+            if (isWeekend()) {
+                table.classList.add('hidden');
+                notificationBox.innerHTML = `
+                    <div class="notification-box info">
+                        <i class="fas fa-umbrella-beach"></i>
+                        <span>Hari ini adalah hari libur. Tidak ada jadwal mengajar.</span>
+                    </div>
+                `;
+                notificationBox.classList.remove('hidden');
+                return;
             }
+
+            // Sembunyikan notifikasi dan tampilkan tabel dengan loader
+            notificationBox.classList.add('hidden');
+            table.classList.remove('hidden');
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>`;
+
+
+            // 1. Dapatkan jadwal hari ini dari cache
+            const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const todayName = dayNames[new Date().getDay()];
+            
+            let todaySchedules = [];
+            if (masterDataCache && masterDataCache.schedules) {
+                todaySchedules = masterDataCache.schedules.filter(s =>
+                    String(s.data[5]) === String(sessionInfo.idGuru) && s.data[0] === todayName
+                );
+            }
+
+            // 2. Dapatkan data rekap dari server (hanya berisi kelas yang ada absensinya)
+            const result = await apiCall('getTodaysRecap', { idGuru: sessionInfo.idGuru }, 'GET', false);
+            
+            if (!result) { // Jika API call gagal
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Gagal memuat data rekap.</td></tr>`;
+                return;
+            }
+            
+            const serverRecap = result.data || [];
+            const serverRecapMap = new Map(serverRecap.map(item => [`${item.mapel}-${item.kelas}`, item]));
+            const finalRecap = [];
+
+            // 3. Gabungkan jadwal dengan data rekap
+            todaySchedules.forEach(schedule => {
+                const [hari, jamMulai, jamSelesai, mapel, kelas, idGuru] = schedule.data;
+                const key = `${mapel}-${kelas}`;
+                const recapEntry = serverRecapMap.get(key);
+
+                if (recapEntry) {
+                    // Jika ada data absensi di server, gunakan data itu
+                    finalRecap.push(recapEntry);
+                } else {
+                    // Jika tidak ada, berarti semua hadir
+                    finalRecap.push({
+                        mapel: mapel,
+                        kelas: kelas,
+                        jam: `${jamMulai} - ${jamSelesai}`,
+                        hadir: 'Semua', // Keterangan karena jumlah pasti tidak diketahui client
+                        ijin: 0,
+                        sakit: 0,
+                        alpha: 0
+                    });
+                }
+            });
+
+            // 4. Cek apakah ada jadwal atau tidak dan tampilkan UI yang sesuai
+            if (todaySchedules.length === 0) {
+                table.classList.add('hidden');
+                notificationBox.innerHTML = `
+                    <div class="notification-box info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Anda tidak memiliki jadwal mengajar hari ini. Selamat beristirahat!</span>
+                    </div>
+                `;
+                notificationBox.classList.remove('hidden');
+                return;
+            }
+
+            // 5. Urutkan berdasarkan jam mulai dan render ke tabel
+            finalRecap.sort((a, b) => a.jam.localeCompare(b.jam));
+
+            tableBody.innerHTML = '';
+            finalRecap.forEach(item => {
+                const row = `
+                    <tr>
+                        <td>${item.mapel}</td>
+                        <td>${item.kelas}</td>
+                        <td>${item.jam}</td>
+                        <td>${item.hadir}</td>
+                        <td>${item.ijin}</td>
+                        <td>${item.sakit}</td>
+                        <td>${item.alpha}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
         }
         
         function populateMapelDropdown() {
-            if (initialData.master && initialData.master[sessionInfo.namaGuru]) {
-                const mapelData = Object.keys(initialData.master[sessionInfo.namaGuru].mapel);
-                populateDropdown(selectMapel, mapelData, 'Pilih Mata Pelajaran...');
+            let mapelData = [];
+            if (initialData.master && initialData.master[sessionInfo.namaGuru] && initialData.master[sessionInfo.namaGuru].mapel) {
+                mapelData = Object.keys(initialData.master[sessionInfo.namaGuru].mapel).sort((a, b) => a.localeCompare(b));
             }
+            populateDropdown(selectMapel, mapelData, 'Pilih Mata Pelajaran...');
+            // Atur ulang juga dropdown kelas yang bergantung padanya
+            selectKelas.innerHTML = '<option value="">Pilih Kelas...</option>';
+            selectKelas.disabled = true;
         }
 
         selectMapel.addEventListener('change', () => {
@@ -991,7 +1108,7 @@
             scrollToSaveBtn.classList.add('hidden');
             absensiTableBody.innerHTML = '';
             if (selectedMapel) {
-                const kelasData = initialData.master[sessionInfo.namaGuru].mapel[selectedMapel];
+                const kelasData = initialData.master[sessionInfo.namaGuru].mapel[selectedMapel].sort(sortKelas);
                 populateDropdown(selectKelas, kelasData, 'Pilih Kelas...');
                 selectKelas.disabled = false;
             } else {
@@ -1091,11 +1208,59 @@
         });
         
         async function loadMasterData() {
-            const result = await apiCall('getAllData', {}, 'GET');
-            if (result && result.data) {
-                masterDataCache = result.data;
-                renderJadwalTable(masterDataCache.schedules, sessionInfo.idGuru);
+            showLoader(true);
+            const allDataResult = await apiCall('getAllData', {}, 'GET', false);
+            const teachersResult = await apiCall('getTeachersAndMasterData', {}, 'GET', false);
+            showLoader(false);
+            
+            const dataNotification = document.getElementById('data-notification');
+            const dataContainer = document.getElementById('jadwal-container');
+
+            if (allDataResult && allDataResult.data) {
+                masterDataCache = allDataResult.data;
+                const teacherSchedules = masterDataCache.schedules.filter(s => String(s.data[5]) === String(sessionInfo.idGuru));
+
+                if (teacherSchedules.length === 0) {
+                     dataNotification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>Anda belum memiliki jadwal mengajar. Klik tombol 'Tambah Jadwal' di atas untuk memulai.</span></div>`;
+                     dataNotification.classList.remove('hidden');
+                     jadwalTableContainer.innerHTML = '';
+                     dataContainer.classList.remove('hidden');
+                } else {
+                     dataNotification.classList.add('hidden');
+                     dataContainer.classList.remove('hidden');
+                     renderJadwalTable(masterDataCache.schedules, sessionInfo.idGuru);
+                }
+            } else {
+                 dataNotification.innerHTML = `<div class="notification-box info"><i class="fas fa-times-circle"></i><span>Gagal memuat data jadwal.</span></div>`;
+                 dataNotification.classList.remove('hidden');
+                 dataContainer.classList.add('hidden');
             }
+            
+            updateNavLinksVisibility(); // Periksa ulang visibilitas menu setelah data diperbarui
+
+            if (teachersResult && teachersResult.data) {
+                initialData = teachersResult.data;
+            }
+        }
+
+        // --- FUNGSI BARU UNTUK MENGATUR TAMPILAN MENU NAVIGASI ---
+        function updateNavLinksVisibility() {
+            const absensiLink = document.querySelector('.nav-link[data-target="absensi"]');
+            const laporanLink = document.querySelector('.nav-link[data-target="laporan"]');
+            const weekend = isWeekend();
+
+            if (!masterDataCache || !masterDataCache.schedules) {
+                absensiLink.classList.add('hidden');
+                laporanLink.classList.add('hidden');
+                return;
+            }
+
+            const teacherSchedules = masterDataCache.schedules.filter(s => String(s.data[5]) === String(sessionInfo.idGuru));
+            const hasSchedules = teacherSchedules.length > 0;
+
+            // Sembunyikan jika tidak ada jadwal ATAU jika weekend
+            absensiLink.classList.toggle('hidden', !hasSchedules || weekend);
+            laporanLink.classList.toggle('hidden', !hasSchedules || weekend);
         }
 
         // --- NAVIGASI & HALAMAN DATA ---
@@ -1119,15 +1284,49 @@
                 if (target !== 'absensi') {
                     scrollToSaveBtn.classList.add('hidden');
                 }
+                
+                // Logika untuk memuat data dan menampilkan notifikasi saat tab diganti
                 if (target === 'absensi') {
+                    await loadMasterData(); // SELALU muat data terbaru
                     populateMapelDropdown();
+                    const notification = document.getElementById('absensi-notification');
+                    const sessionSelection = document.getElementById('session-selection');
+                    const attendanceForm = document.getElementById('attendance-form-container');
+
+                    // Selalu reset/sembunyikan form absensi saat berganti tab
+                    attendanceForm.classList.add('hidden');
+                    scrollToSaveBtn.classList.add('hidden'); 
+                    
+                    if (selectMapel.options.length <= 1) {
+                        notification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>Anda tidak memiliki jadwal mengajar. Silakan tambahkan jadwal di menu 'Data' terlebih dahulu.</span></div>`;
+                        notification.classList.remove('hidden');
+                        sessionSelection.classList.add('hidden'); // Sembunyikan dropdown
+                    } else {
+                        notification.classList.add('hidden');
+                        sessionSelection.classList.remove('hidden'); // Tampilkan dropdown
+                    }
                 } else if (target === 'data') {
-                    if (!masterDataCache) await loadMasterData();
+                    await loadMasterData();
                 } else if (target === 'beranda') {
                     await loadHomepageRecap();
                 } else if (target === 'laporan') {
-                    if (!masterDataCache) await loadMasterData();
+                    // Hancurkan instance chart lama untuk mencegah tampilan data lama
+                    if (attendanceChartInstance) {
+                        attendanceChartInstance.destroy();
+                        attendanceChartInstance = null;
+                    }
+                    await loadMasterData(); // SELALU muat data terbaru
                     populateLaporanKelasDropdown();
+                    const notification = document.getElementById('laporan-notification');
+                    const content = document.getElementById('laporan-main-content');
+                     if (selectKelasLaporan.options.length <= 1) {
+                        notification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>Tidak ada data laporan yang tersedia. Pastikan Anda memiliki jadwal mengajar.</span></div>`;
+                        notification.classList.remove('hidden');
+                        content.classList.add('hidden');
+                    } else {
+                        notification.classList.add('hidden');
+                        content.classList.remove('hidden');
+                    }
                 }
             });
         });
@@ -1195,11 +1394,27 @@
                     const result = await apiCall('deleteSchedule', { rowIndex: target.dataset.rowIndex });
                     if (result) {
                         showMessage(result.message, 'success');
-                        await loadMasterData();
+                        await loadMasterData(); // Muat ulang semua data setelah hapus
                     }
                 });
             }
         });
+        
+        // Helper function to check for time overlap
+        function isTimeOverlap(start1, end1, start2, end2) {
+            const timeToMinutes = (timeStr) => {
+                const [hours, minutes] = timeStr.split('.').map(Number);
+                return (hours * 60) + (minutes || 0);
+            };
+
+            const start1Min = timeToMinutes(start1);
+            const end1Min = timeToMinutes(end1);
+            const start2Min = timeToMinutes(start2);
+            const end2Min = timeToMinutes(end2);
+
+            // Logic: (StartA < EndB) and (StartB < EndA)
+            return start1Min < end2Min && start2Min < end1Min;
+        }
         
         jadwalForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1212,27 +1427,52 @@
                 kelas: document.getElementById('jadwal-kelas').value,
                 idGuru: document.getElementById('jadwal-id-guru').value,
             };
+
+            // --- VALIDASI WAKTU TUMPANG TINDIH ---
+            const teacherSchedules = masterDataCache.schedules.filter(s => String(s.data[5]) === String(sessionInfo.idGuru));
+            
+            for (const schedule of teacherSchedules) {
+                // Lewati jadwal yang sedang diedit agar tidak membandingkan dengan dirinya sendiri
+                if (dataToSave.rowIndex && String(schedule.rowIndex) === String(dataToSave.rowIndex)) {
+                    continue;
+                }
+
+                const existingScheduleData = schedule.data;
+                // Cek hanya untuk hari yang sama
+                if (existingScheduleData[0] === dataToSave.hari) {
+                    const overlap = isTimeOverlap(
+                        dataToSave.jamMulai,
+                        dataToSave.jamSelesai,
+                        existingScheduleData[1], // jamMulai from existing
+                        existingScheduleData[2]  // jamSelesai from existing
+                    );
+
+                    if (overlap) {
+                        showMessage(`Jam tempuh! Jadwal tumpang tindih dengan kelas ${existingScheduleData[4]} (${existingScheduleData[1]} - ${existingScheduleData[2]}).`, 'error');
+                        return; // Hentikan proses simpan
+                    }
+                }
+            }
+            // --- AKHIR VALIDASI ---
+
             const result = await apiCall('saveOrUpdateSchedule', dataToSave);
             if (result) {
                 showMessage(result.message, 'success');
                 closeJadwalModal();
-                await loadMasterData();
+                await loadMasterData(); // Muat ulang semua data setelah simpan
             }
         });
         
         // --- LOGIKA GRAFIK LAPORAN ---
         function populateLaporanKelasDropdown() {
-             if (masterDataCache && masterDataCache.schedules) {
-                // Filter jadwal hanya untuk guru yang login
-                const teacherSchedules = masterDataCache.schedules.filter(schedule => {
-                    const scheduleTeacherId = String(schedule.data[5]);
-                    return scheduleTeacherId === String(sessionInfo.idGuru);
-                });
-
-                // Ambil semua kelas unik dari jadwal guru tersebut, tanpa filter hari
-                const uniqueClasses = [...new Set(teacherSchedules.map(s => s.data[4]))].sort();
-                populateDropdown(selectKelasLaporan, uniqueClasses, 'Pilih Kelas...');
-            }
+            let uniqueClasses = [];
+            if (masterDataCache && masterDataCache.schedules) {
+               const teacherSchedules = masterDataCache.schedules.filter(schedule => 
+                   String(schedule.data[5]) === String(sessionInfo.idGuru));
+               
+               uniqueClasses = [...new Set(teacherSchedules.map(s => s.data[4]))].sort(sortKelas);
+           }
+           populateDropdown(selectKelasLaporan, uniqueClasses, 'Pilih Kelas...');
         }
         
         selectKelasLaporan.addEventListener('change', async (e) => {
@@ -1242,7 +1482,7 @@
             }
             if (!kelas) return;
             
-            const result = await apiCall('getMonthlyChartData', { kelas }, 'GET');
+            const result = await apiCall('getMonthlyChartData', { kelas, idGuru: sessionInfo.idGuru }, 'GET');
             if (result && result.data) {
                 renderAttendanceChart(result.data);
             }
@@ -1273,9 +1513,10 @@
                             title: { display: true, text: 'Jumlah Siswa', font: { size: 14 } },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' },
                             ticks: {
-                                stepSize: 1,
+                                stepSize: 2,
                                 precision: 0 
-                            }
+                            },
+                            max: 34
                         },
                         x: {
                             title: { display: true, text: 'Tanggal di Bulan Ini', font: { size: 14 } },

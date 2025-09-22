@@ -102,6 +102,10 @@
             font-size: 1em;
             transition: all 0.3s ease;
         }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
 
         select:focus, input:focus {
             outline: none;
@@ -602,8 +606,16 @@
         <main id="main-content">
             <!-- BERANDA -->
             <div id="beranda-content" class="content-section">
-                <h2>Rekapitulasi Absensi Hari Ini</h2>
+                <div class="data-header">
+                     <h2 id="beranda-title" style="border: none; margin: 0; padding: 0;">Rekapitulasi Absensi Hari Ini</h2>
+                     <button id="btn-print-pdf" class="btn-add hidden"><i class="fas fa-file-pdf"></i> Cetak Laporan Harian</button>
+                </div>
                 <p id="info-sesi"></p>
+                <!-- Admin Date Picker -->
+                <div id="admin-main-date-picker-container" class="input-group hidden">
+                    <label for="admin-main-date">Pilih Tanggal (Admin)</label>
+                    <input type="date" id="admin-main-date">
+                </div>
                 <div id="homepage-notification" class="hidden"></div>
                 <table class="futuristic-table" id="rekap-harian-table">
                     <thead>
@@ -624,7 +636,7 @@
                 
                 <!-- DETAIL SISWA TIDAK HADIR HARI INI -->
                 <div id="todays-absentees-container" class="hidden" style="margin-top: 40px;">
-                    <h3 style="margin-bottom: 15px; color: var(--glow); border-bottom: 1px solid var(--accent); padding-bottom: 10px;">Siswa Tidak Hadir Hari Ini</h3>
+                    <h3 id="absentees-title">Siswa Tidak Hadir Hari Ini</h3>
                     <div id="todays-absentees-wrapper">
                         <!-- Konten diisi oleh JavaScript -->
                     </div>
@@ -829,6 +841,9 @@
         const attendanceFormContainer = document.getElementById('attendance-form-container');
         const absensiTableBody = document.querySelector('#absensi-table tbody');
         const btnSubmitAbsensi = document.getElementById('btn-submit-absensi');
+        const adminMainDatePicker = document.getElementById('admin-main-date');
+        const btnPrintPdf = document.getElementById('btn-print-pdf');
+
 
         // Elemen Modal Jadwal
         const jadwalModal = document.getElementById('jadwal-modal');
@@ -891,9 +906,9 @@
         };
 
 
-        function isWeekend() {
-            const today = new Date().getDay(); // 0 = Minggu, 6 = Sabtu
-            return today === 0 || today === 6;
+        function isWeekend(date = new Date()) {
+            const day = date.getDay(); // 0 = Minggu, 6 = Sabtu
+            return day === 0 || day === 6;
         }
 
         const populateDropdown = (selectEl, options, defaultText) => {
@@ -982,6 +997,14 @@
                 if (showLoaderFlag) showLoader(false);
             }
         }
+        
+        // --- Fungsi helper baru untuk format tanggal lokal ---
+        function toLocalISOString(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
 
         // --- LOGIKA APLIKASI ---
 
@@ -1042,6 +1065,14 @@
             
             showMessage(`Login berhasil sebagai ${sessionInfo.namaGuru}`, 'success');
             
+            if (isAdmin) {
+                const adminDatePickerContainer = document.getElementById('admin-main-date-picker-container');
+                adminDatePickerContainer.classList.remove('hidden');
+                if (!adminMainDatePicker.value) {
+                    adminMainDatePicker.valueAsDate = new Date();
+                }
+            }
+            
             if (!masterDataCache) {
                 const allDataResult = await apiCall('getAllData', {}, 'GET', false);
                 if (allDataResult && allDataResult.data) {
@@ -1057,19 +1088,22 @@
             const tableBody = table.querySelector('tbody');
             const notificationBox = document.getElementById('homepage-notification');
             const absenteesContainer = document.getElementById('todays-absentees-container');
+            const selectedDate = getSelectedDate();
+            const today = new Date();
+            const isToday = selectedDate.toDateString() === today.toDateString();
+            
+            document.getElementById('beranda-title').textContent = isToday ? 'Rekapitulasi Absensi Hari Ini' : `Rekapitulasi Absensi ${selectedDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+            document.getElementById('absentees-title').textContent = isToday ? 'Siswa Tidak Hadir Hari Ini' : `Siswa Tidak Hadir ${selectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}`;
 
-            // Sembunyikan semua elemen konten beranda pada awalnya
             table.classList.add('hidden');
             notificationBox.classList.add('hidden');
             absenteesContainer.classList.add('hidden');
+            btnPrintPdf.classList.add('hidden');
             
-            // Tampilkan loader di tabel
             tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>`;
             table.classList.remove('hidden');
 
-
-            // Cek jika hari ini weekend, tapi lewati untuk admin
-            if (isWeekend() && !isAdmin) {
+            if (isWeekend(selectedDate) && !isAdmin) {
                 table.classList.add('hidden');
                 notificationBox.innerHTML = `
                     <div class="notification-box info">
@@ -1081,8 +1115,7 @@
                 return;
             }
 
-            // Panggil API untuk mendapatkan rekapitulasi yang sudah diproses
-            const result = await apiCall('getTodaysRecap', { idGuru: sessionInfo.idGuru }, 'GET', false);
+            const result = await apiCall('getTodaysRecap', { idGuru: sessionInfo.idGuru, date: toLocalISOString(selectedDate) }, 'GET', false);
             
             if (!result || !result.data) {
                 tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Gagal memuat data rekap.</td></tr>`;
@@ -1091,10 +1124,9 @@
 
             const finalRecap = result.data;
 
-            // Cek jika tidak ada jadwal hari ini
             if (finalRecap.length === 0) {
                 table.classList.add('hidden');
-                const message = isAdmin ? "Tidak ada jadwal untuk Administrator hari ini." : "Anda tidak memiliki jadwal mengajar hari ini. Selamat beristirahat!";
+                const message = isAdmin ? "Tidak ada jadwal untuk Administrator pada tanggal yang dipilih." : "Anda tidak memiliki jadwal mengajar hari ini. Selamat beristirahat!";
                 notificationBox.innerHTML = `
                     <div class="notification-box info">
                         <i class="fas fa-info-circle"></i>
@@ -1105,7 +1137,8 @@
                 return;
             }
 
-            // Urutkan dan render tabel rekap
+            table.classList.remove('hidden');
+            btnPrintPdf.classList.remove('hidden');
             finalRecap.sort((a, b) => a.jam.localeCompare(b.jam));
 
             tableBody.innerHTML = '';
@@ -1124,8 +1157,7 @@
                 tableBody.innerHTML += row;
             });
             
-            // PANGGILAN UNTUK DATA SISWA TIDAK HADIR
-            const absenteesResult = await apiCall('getTodaysAbsentees', { idGuru: sessionInfo.idGuru }, 'GET', false);
+            const absenteesResult = await apiCall('getTodaysAbsentees', { idGuru: sessionInfo.idGuru, date: toLocalISOString(selectedDate) }, 'GET', false);
             if (absenteesResult) {
                 renderTodaysAbsenteesTable(absenteesResult.data);
             }
@@ -1136,7 +1168,7 @@
             const wrapper = document.getElementById('todays-absentees-wrapper');
             
             if (!absentees || absentees.length === 0) {
-                wrapper.innerHTML = `<p style="text-align: center; padding: 20px 0;">Bagus! Semua siswa hadir hari ini.</p>`;
+                wrapper.innerHTML = `<p style="text-align: center; padding: 20px 0;">Bagus! Semua siswa hadir pada tanggal ini.</p>`;
             } else {
                 absentees.sort((a, b) => {
                     if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
@@ -1161,18 +1193,18 @@
         }
 
         function populateMapelDropdown() {
+            const selectedDate = getSelectedDate();
             const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const todayName = dayNames[new Date().getDay()];
+            const selectedDayName = dayNames[selectedDate.getDay()];
             let subjects = [];
 
             if (masterDataCache && masterDataCache.schedules) {
-                // Selalu filter jadwal untuk hari ini di menu absensi, bahkan untuk admin.
-                const todaysSchedules = masterDataCache.schedules.filter(schedule => 
+                const relevantSchedules = masterDataCache.schedules.filter(schedule => 
                     String(schedule.data[5]) === String(sessionInfo.idGuru) &&
-                    schedule.data[0] === todayName
+                    schedule.data[0] === selectedDayName
                 );
                 
-                const subjectSet = new Set(todaysSchedules.map(schedule => schedule.data[3]));
+                const subjectSet = new Set(relevantSchedules.map(schedule => schedule.data[3]));
                 subjects = Array.from(subjectSet).sort((a, b) => a.localeCompare(b));
             }
 
@@ -1188,17 +1220,17 @@
             absensiTableBody.innerHTML = '';
 
             if (selectedMapel) {
+                const selectedDate = getSelectedDate();
                 const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-                const todayName = dayNames[new Date().getDay()];
+                const selectedDayName = dayNames[selectedDate.getDay()];
 
-                // Selalu filter kelas berdasarkan jadwal hari ini, bahkan untuk admin.
-                const todaysClassSchedules = masterDataCache.schedules.filter(schedule =>
+                const relevantClassSchedules = masterDataCache.schedules.filter(schedule =>
                     String(schedule.data[5]) === String(sessionInfo.idGuru) &&
                     schedule.data[3] === selectedMapel &&
-                    schedule.data[0] === todayName
+                    schedule.data[0] === selectedDayName
                 );
 
-                const kelasData = todaysClassSchedules.map(schedule => schedule.data[4]).sort(sortKelas);
+                const kelasData = relevantClassSchedules.map(schedule => schedule.data[4]).sort(sortKelas);
                 
                 populateDropdown(selectKelas, kelasData, 'Pilih Kelas...');
                 selectKelas.disabled = false;
@@ -1217,12 +1249,16 @@
                 return;
              }
              
+             const selectedDate = getSelectedDate();
+             
              const [studentsResult, attendanceResult] = await Promise.all([
                 apiCall('getStudentsByClass', { kelas }, 'GET'),
                 apiCall('getTodaysAttendanceBySession', {
                     namaGuru: sessionInfo.namaGuru,
                     mapel: mapel,
-                    kelas: kelas
+                    kelas: kelas,
+                    date: toLocalISOString(selectedDate),
+                    idGuru: sessionInfo.idGuru
                 }, 'GET')
              ]);
 
@@ -1286,7 +1322,13 @@
                 }
             });
             
-            const currentSession = { ...sessionInfo, mapel: selectMapel.value, kelas: selectKelas.value };
+            const selectedDate = getSelectedDate();
+            const currentSession = { 
+                ...sessionInfo, 
+                mapel: selectMapel.value, 
+                kelas: selectKelas.value,
+                date: toLocalISOString(selectedDate)
+            };
             const result = await apiCall('saveAttendance', { attendanceData, sessionInfo: currentSession });
             if(result) {
                 showMessage(result.message || 'Absensi berhasil disimpan!', 'success');
@@ -1383,7 +1425,7 @@
                 
                 if (target === 'absensi') {
                     await loadMasterData();
-                    populateMapelDropdown();
+                    populateMapelDropdown(); // Ini sekarang akan menggunakan tanggal dari beranda
                     const notification = document.getElementById('absensi-notification');
                     const sessionSelection = document.getElementById('session-selection');
                     const attendanceForm = document.getElementById('attendance-form-container');
@@ -1392,7 +1434,7 @@
                     scrollToSaveBtn.classList.add('hidden'); 
                     
                     if (selectMapel.options.length <= 1) {
-                        const message = isAdmin ? "Tidak ada jadwal mengajar untuk Administrator hari ini." : "Anda tidak memiliki jadwal mengajar untuk hari ini.";
+                        const message = isAdmin ? "Tidak ada jadwal mengajar pada tanggal yang dipilih di Beranda." : "Anda tidak memiliki jadwal mengajar untuk hari ini.";
                         notification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>${message}</span></div>`;
                         notification.classList.remove('hidden');
                         sessionSelection.classList.add('hidden');
@@ -1411,11 +1453,11 @@
                     }
                     document.getElementById('absenteeism-details-container').classList.add('hidden');
                     await loadMasterData();
-                    populateLaporanKelasDropdown();
+                    populateLaporanKelasDropdown(); 
                     const notification = document.getElementById('laporan-notification');
                     const content = document.getElementById('laporan-main-content');
                      if (selectKelasLaporan.options.length <= 1) {
-                        notification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>Tidak ada data laporan yang tersedia. Pastikan Anda memiliki jadwal mengajar.</span></div>`;
+                        notification.innerHTML = `<div class="notification-box info"><i class="fas fa-info-circle"></i><span>Tidak ada data laporan yang tersedia untuk jadwal hari ini.</span></div>`;
                         notification.classList.remove('hidden');
                         content.classList.add('hidden');
                     } else {
@@ -1439,6 +1481,7 @@
             }
             
             if (data) {
+                // MEMPERBAIKI BUG: Memuat data jam yang benar saat mengedit
                 jadwalModalTitle.textContent = "Edit Jadwal";
                 document.getElementById('jadwal-hari').value = data[0];
                 document.getElementById('jadwal-jam-mulai').value = data[1];
@@ -1582,18 +1625,18 @@
         
         // --- LOGIKA GRAFIK LAPORAN ---
         function populateLaporanKelasDropdown() {
+            const selectedDate = getSelectedDate();
             const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const todayName = dayNames[new Date().getDay()];
+            const dayName = dayNames[selectedDate.getDay()];
             let uniqueClasses = [];
 
             if (masterDataCache && masterDataCache.schedules) {
-               // Filter jadwal tidak hanya berdasarkan guru, tapi juga berdasarkan HARI INI.
-               const todaysSchedules = masterDataCache.schedules.filter(schedule => 
+               const relevantSchedules = masterDataCache.schedules.filter(schedule => 
                    String(schedule.data[5]) === String(sessionInfo.idGuru) &&
-                   schedule.data[0] === todayName
+                   schedule.data[0] === dayName
                );
                
-               uniqueClasses = [...new Set(todaysSchedules.map(s => s.data[4]))].sort(sortKelas);
+               uniqueClasses = [...new Set(relevantSchedules.map(s => s.data[4]))].sort(sortKelas);
            }
            populateDropdown(selectKelasLaporan, uniqueClasses, 'Pilih Kelas...');
         }
@@ -1758,6 +1801,41 @@
             }
             closeConfirmModal();
         });
+
+        // --- Event listener untuk date picker admin ---
+        adminMainDatePicker.addEventListener('change', () => {
+            loadHomepageRecap();
+        });
+        
+        btnPrintPdf.addEventListener('click', async () => {
+            showMessage('Mempersiapkan laporan PDF...', 'info');
+            const selectedDate = getSelectedDate();
+            const result = await apiCall('generateDailyPdfReport', { 
+                idGuru: sessionInfo.idGuru, 
+                date: toLocalISOString(selectedDate) 
+            }, 'GET');
+
+            if (result && result.data && result.data.pdfBase64) {
+                const link = document.createElement('a');
+                link.href = `data:application/pdf;base64,${result.data.pdfBase64}`;
+                link.download = `Laporan Harian - ${sessionInfo.namaGuru} - ${toLocalISOString(selectedDate)}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showMessage('Laporan PDF berhasil diunduh.', 'success');
+            } else {
+                showMessage('Gagal membuat laporan PDF.', 'error');
+            }
+        });
+
+        // --- Fungsi helper untuk mendapatkan tanggal yang dipilih ---
+        function getSelectedDate() {
+            if (isAdmin && adminMainDatePicker.value) {
+                const parts = adminMainDatePicker.value.split('-');
+                return new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+            }
+            return new Date();
+        }
 
 
         // --- INISIALISASI APLIKASI ---

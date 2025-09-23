@@ -538,6 +538,125 @@
                 transform: translateY(-5px);
             }
         }
+        
+        /* --- ATURAN RESPONSIVE --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+                overflow: auto; /* Izinkan scroll di mobile */
+            }
+
+            #app-view {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            /* --- Navbar Responsif --- */
+            #navbar {
+                flex-direction: column;
+                height: auto;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            #nav-links {
+                width: 100%;
+                justify-content: space-around;
+                margin: 5px 0;
+                flex-wrap: wrap; /* Izinkan link untuk wrap */
+            }
+            
+            .nav-link {
+                padding: 8px 12px;
+                flex-grow: 1;
+                justify-content: center;
+            }
+
+            .nav-link .link-text {
+                display: none; /* Sembunyikan teks, tampilkan ikon saja */
+            }
+            
+            #logout-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            /* --- Konten Utama Responsif --- */
+            #main-content {
+                padding: 10px;
+                height: auto;
+            }
+
+            .content-section {
+                padding: 15px;
+            }
+            
+            .data-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            #beranda-title {
+                text-align: center;
+            }
+            
+            /* --- Dropdown Responsif --- */
+            #session-selection > div {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            /* --- Tabel Responsif --- */
+            .futuristic-table thead {
+                display: none; /* Sembunyikan header tabel */
+            }
+
+            .futuristic-table tr {
+                display: block;
+                margin-bottom: 20px;
+                border-bottom: 2px solid var(--glow);
+                padding-bottom: 15px;
+            }
+            
+            .futuristic-table tr:last-child {
+                 border-bottom: none;
+                 padding-bottom: 0;
+                 margin-bottom: 0;
+            }
+
+            .futuristic-table td {
+                display: block;
+                text-align: right; /* Pindahkan nilai ke kanan */
+                padding-left: 50%; /* Beri ruang untuk label */
+                position: relative;
+                border-bottom: 1px dotted var(--accent);
+            }
+            
+            .futuristic-table td:last-child {
+                border-bottom: none;
+            }
+
+            .futuristic-table td::before {
+                content: attr(data-label); /* Ambil teks dari atribut data-label */
+                position: absolute;
+                left: 15px;
+                width: calc(50% - 30px);
+                text-align: left;
+                font-weight: bold;
+                color: var(--glow);
+            }
+            
+            .status-buttons {
+                justify-content: flex-end; /* Ratakan tombol ke kanan */
+            }
+            
+            /* --- Modal & Login Responsif --- */
+            #login-view, .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
 
 
     </style>
@@ -1145,13 +1264,13 @@
             finalRecap.forEach(item => {
                 const row = `
                     <tr>
-                        <td>${item.mapel}</td>
-                        <td>${item.kelas}</td>
-                        <td>${item.jam}</td>
-                        <td>${item.hadir}</td>
-                        <td>${item.ijin}</td>
-                        <td>${item.sakit}</td>
-                        <td>${item.alpha}</td>
+                        <td data-label="Mata Pelajaran">${item.mapel}</td>
+                        <td data-label="Kelas">${item.kelas}</td>
+                        <td data-label="Jam">${item.jam}</td>
+                        <td data-label="Hadir">${item.hadir}</td>
+                        <td data-label="Ijin">${item.ijin}</td>
+                        <td data-label="Sakit">${item.sakit}</td>
+                        <td data-label="Alpha">${item.alpha}</td>
                     </tr>
                 `;
                 tableBody.innerHTML += row;
@@ -1179,10 +1298,10 @@
                 absentees.forEach(student => {
                     tableHTML += `
                         <tr>
-                            <td>${student.nama}</td>
-                            <td>${student.kelas}</td>
-                            <td>${student.mapel}</td>
-                            <td>${student.status}</td>
+                            <td data-label="Nama Siswa">${student.nama}</td>
+                            <td data-label="Kelas">${student.kelas}</td>
+                            <td data-label="Mata Pelajaran">${student.mapel}</td>
+                            <td data-label="Status">${student.status}</td>
                         </tr>
                     `;
                 });
@@ -1283,15 +1402,20 @@
                     const currentStatus = attendanceMap.get(String(student.nis)) || 'Hadir';
 
                     tr.innerHTML = `
-                        <td>${student.nis}</td>
-                        <td>${student.nama}</td>
-                        <td class="status-buttons">
-                            <button class="status-btn ${currentStatus === 'Hadir' ? 'selected' : ''}" data-status="Hadir">Hadir</button>
-                            <button class="status-btn ${currentStatus === 'Sakit' ? 'selected' : ''}" data-status="Sakit">Sakit</button>
-                            <button class="status-btn ${currentStatus === 'Ijin' ? 'selected' : ''}" data-status="Ijin">Ijin</button>
-                            <button class="status-btn ${currentStatus === 'Alpha' ? 'selected' : ''}" data-status="Alpha">Alpha</button>
+                        <td data-label="NIS">${student.nis}</td>
+                        <td data-label="Nama Siswa">${student.nama}</td>
+                        <td data-label="Status Kehadiran">
+                            <div class="status-buttons">
+                                <button class="status-btn" data-status="Hadir">H</button>
+                                <button class="status-btn" data-status="Sakit">S</button>
+                                <button class="status-btn" data-status="Ijin">I</button>
+                                <button class="status-btn" data-status="Alpha">A</button>
+                            </div>
                         </td>
                     `;
+                    const currentBtn = tr.querySelector(`.status-btn[data-status="${currentStatus}"]`);
+                    if(currentBtn) currentBtn.classList.add('selected');
+                    
                     absensiTableBody.appendChild(tr);
                 });
             }
@@ -1514,9 +1638,11 @@
             } else {
                 filteredSchedules.forEach(schedule => {
                     tableHTML += `<tr>`;
-                    schedule.data.slice(0, 5).forEach(cell => tableHTML += `<td>${cell}</td>`);
+                    schedule.data.slice(0, 5).forEach((cell, index) => {
+                       tableHTML += `<td data-label="${headers[index]}">${cell}</td>`;
+                    });
                     tableHTML += `
-                        <td style="text-align: center;">
+                        <td data-label="Aksi" style="text-align: right;">
                             <i class="fas fa-edit action-icon" style="color: var(--glow); margin-right: 15px;" data-row-index="${schedule.rowIndex}" data-schedule='${JSON.stringify(schedule.data)}' title="Edit Jadwal"></i>
                             <i class="fas fa-trash-alt action-icon" style="color: var(--secondary);" data-row-index="${schedule.rowIndex}" title="Hapus Jadwal"></i>
                         </td>
@@ -1734,9 +1860,9 @@
             details.forEach(item => {
                 tableHTML += `
                     <tr>
-                        <td>${new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
-                        <td>${item.nama}</td>
-                        <td>${item.status}</td>
+                        <td data-label="Tanggal">${new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+                        <td data-label="Nama Siswa">${item.nama}</td>
+                        <td data-label="Status">${item.status}</td>
                     </tr>
                 `;
             });
